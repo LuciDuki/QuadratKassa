@@ -122,6 +122,7 @@ class VendingMachineGUI:
         else:
             self.user_manager_window.lift()
     
+
     def add_user(self):
         new_username = simpledialog.askstring("Add User", "Enter a new username:")
         if new_username is not None:
@@ -137,8 +138,18 @@ class VendingMachineGUI:
                             (new_username, user_balance)
                         )
                     self.users[new_username] = {"balance": user_balance, "purchases": []}
+                    self.update_user_buttons()  # Update the user buttons
                     self.user_listbox.insert(tk.END, new_username)
-    
+
+    def update_user_buttons(self):
+        for button in self.user_buttons_frame.winfo_children():
+            button.destroy()
+
+        for username in self.users:
+            user_button = tk.Button(self.user_buttons_frame, text=username, font=("Helvetica", 14), padx=20, pady=10,
+                                    command=lambda u=username: self.select_user(u))
+            user_button.pack(side=tk.LEFT, padx=10)
+
     def edit_user(self):
         selected_user = self.user_listbox.get(tk.ACTIVE)
         if selected_user:
@@ -180,6 +191,17 @@ class VendingMachineGUI:
                 del self.users[selected_user]
                 self.user_listbox.delete(tk.ACTIVE)
                 self.user_listbox.insert(tk.END, new_username)
+                
+            
+    def add_money(self):
+        if self.current_user:
+            self.users[self.current_user]["balance"] += 0.5
+            with self.db_connection:
+                self.db_connection.execute(
+                    "UPDATE users SET balance = ? WHERE username = ?",
+                    (self.users[self.current_user]["balance"], self.current_user)
+                )
+            self.update_balance_label()
 
     def delete_user(self):
         selected_user = self.user_listbox.get(tk.ACTIVE)
